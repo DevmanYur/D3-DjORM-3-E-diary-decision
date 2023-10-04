@@ -14,7 +14,7 @@ python manage.py shell
 
 3. импортируйте функции
 ```
-from scripts import fix_marks, remove_chastisements, create_commendation
+from scripts import fix_marks, remove_chastisements, create_commendation, get_schoolkid
 ```
 4. запустите подходящую функцию
 
@@ -30,7 +30,7 @@ from scripts import fix_marks, remove_chastisements, create_commendation
 
 >создание похвалы школьнику от учителя по последнему уроку
 > ```
-> rcreate_commendation("фамилия имя", "предмет")
+> create_commendation("фамилия имя", "предмет")
 > ```
 
 

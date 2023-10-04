@@ -9,19 +9,27 @@ from datacenter.models import Mark
 from datacenter.models import Schoolkid
 from datacenter.models import Subject
 
+PRAISES = [
+    'Молодец!', 'Отлично!', 'Хорошо!', 'Гораздо лучше, чем я ожидал!',
+    'Ты меня приятно удивил!', 'Великолепно!', 'Прекрасно!', 'Ты меня очень обрадовал!',
+    'Именно этого я давно ждал от тебя!', 'Сказано здорово – просто и ясно!',
+    'Ты, как всегда, точен!', 'Очень хороший ответ!', 'Талантливо!',
+    'Ты сегодня прыгнул выше головы!', 'Я поражен!', 'Уже существенно лучше!',
+    'Потрясающе!', 'Замечательно!', 'Прекрасное начало!', 'Так держать!',
+    'Ты на верном пути!', 'Здорово!', 'Это как раз то, что нужно!', 'Я тобой горжусь!',
+    'С каждым разом у тебя получается всё лучше!', 'Мы с тобой не зря поработали!',
+    'Я вижу, как ты стараешься!', 'Ты растешь над собой!', 'Ты многое сделал, я это вижу!',
+    'Теперь у тебя точно все получится!']
+
+def get_schoolkid(schoolkid):
+    return Schoolkid.objects.get(full_name__contains=schoolkid)
 
 def fix_marks(schoolkid):
     try:
-        choice_schoolkid = Schoolkid.objects.get(full_name__contains=schoolkid)
+        choice_schoolkid = get_schoolkid(schoolkid)
         count_all_bad_marks = Mark.objects.filter(schoolkid=choice_schoolkid, points__lte=3).count()
-        if count_all_bad_marks == 0:
-            print("У школьника", choice_schoolkid.full_name, "нет плохих оценок")
-        else:
-            all_bad_marks = Mark.objects.filter(schoolkid=choice_schoolkid, points__lte=3)
-            for mark in all_bad_marks:
-                mark.points = 5
-                mark.save()
-            print("У школьника", choice_schoolkid.full_name, "произведена замена", count_all_bad_marks,
+        all_bad_marks = Mark.objects.filter(schoolkid=choice_schoolkid, points__lte=3).update(points = 5)
+        print("У школьника", choice_schoolkid.full_name, "произведена замена", count_all_bad_marks,
                   "плохих оценок на отличные оценки")
     except MultipleObjectsReturned:
         print("Найдено более одного школьника c данными", schoolkid, ". Уточните ФИО школьника")
@@ -31,14 +39,11 @@ def fix_marks(schoolkid):
 
 def remove_chastisements(schoolkid):
     try:
-        choice_schoolkid = Schoolkid.objects.get(full_name__contains=schoolkid)
+        choice_schoolkid = get_schoolkid(schoolkid)
         count_chastisement = Chastisement.objects.filter(schoolkid=choice_schoolkid).count()
-        if count_chastisement == 0:
-            print("У школьника", choice_schoolkid.full_name, "нет замечаний")
-        else:
-            chastisement = Chastisement.objects.filter(schoolkid=choice_schoolkid)
-            chastisement.delete()
-            print("У школьника", choice_schoolkid.full_name, "удалено", count_chastisement, "замечаний")
+        chastisement = Chastisement.objects.filter(schoolkid=choice_schoolkid)
+        chastisement.delete()
+        print("У школьника", choice_schoolkid.full_name, "удалено", count_chastisement, "замечаний")
 
     except MultipleObjectsReturned:
         print("Найдено более одного школьника c данными", schoolkid, ". Уточните ФИО школьника")
@@ -48,7 +53,7 @@ def remove_chastisements(schoolkid):
 
 def create_commendation(name, subject):
     try:
-        choice_schoolkid = Schoolkid.objects.get(full_name__contains=name)
+        choice_schoolkid = get_schoolkid(name)
         choice_subject = Subject.objects.filter(title__contains=subject).first()
         last_lesson = Lesson.objects.filter(
             year_of_study=choice_schoolkid.year_of_study,
@@ -57,20 +62,8 @@ def create_commendation(name, subject):
             ).order_by('-date', '-timeslot'
             ).first()
 
-        praise = [
-            'Молодец!', 'Отлично!', 'Хорошо!', 'Гораздо лучше, чем я ожидал!',
-            'Ты меня приятно удивил!', 'Великолепно!', 'Прекрасно!', 'Ты меня очень обрадовал!',
-            'Именно этого я давно ждал от тебя!', 'Сказано здорово – просто и ясно!',
-            'Ты, как всегда, точен!', 'Очень хороший ответ!', 'Талантливо!',
-            'Ты сегодня прыгнул выше головы!', 'Я поражен!', 'Уже существенно лучше!',
-            'Потрясающе!', 'Замечательно!', 'Прекрасное начало!', 'Так держать!',
-            'Ты на верном пути!', 'Здорово!', 'Это как раз то, что нужно!', 'Я тобой горжусь!',
-            'С каждым разом у тебя получается всё лучше!', 'Мы с тобой не зря поработали!',
-            'Я вижу, как ты стараешься!', 'Ты растешь над собой!', 'Ты многое сделал, я это вижу!',
-            'Теперь у тебя точно все получится!']
-
         last_commendation = Commendation.objects.filter(
-            subject=choice_subject,
+            subject=last_lesson.subject,
             created=last_lesson.date,
             schoolkid=choice_schoolkid,
             teacher=last_lesson.teacher
@@ -82,8 +75,8 @@ def create_commendation(name, subject):
 
         else:
             new_commendation = Commendation.objects.create(
-                text=random.choice(praise),
-                subject=choice_subject,
+                text=random.choice(PRAISES),
+                subject=last_lesson.subject,
                 created=last_lesson.date,
                 schoolkid=choice_schoolkid,
                 teacher=last_lesson.teacher)
