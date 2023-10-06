@@ -21,6 +21,7 @@ PRAISES = [
     'Я вижу, как ты стараешься!', 'Ты растешь над собой!', 'Ты многое сделал, я это вижу!',
     'Теперь у тебя точно все получится!']
 
+
 def get_schoolkid(schoolkid):
     try:
         return Schoolkid.objects.get(full_name__contains=schoolkid)
@@ -29,30 +30,30 @@ def get_schoolkid(schoolkid):
     except ObjectDoesNotExist:
         print("Школьника c данными", schoolkid, " не существует")
 
+
 def fix_marks(schoolkid):
     choice_schoolkid = get_schoolkid(schoolkid)
-    count_all_bad_marks = Mark.objects.filter(schoolkid=choice_schoolkid, points__lte=3).count()
-    all_bad_marks = Mark.objects.filter(schoolkid=choice_schoolkid, points__lte=3).update(points = 5)
-    print("У школьника", choice_schoolkid.full_name, "произведена замена", count_all_bad_marks,"плохих оценок на отличные оценки")
-
+    Mark.objects.filter(schoolkid=choice_schoolkid, points__lte=3).update(points=5)
 
 
 def remove_chastisements(schoolkid):
     choice_schoolkid = get_schoolkid(schoolkid)
-    count_chastisement = Chastisement.objects.filter(schoolkid=choice_schoolkid).count()
     chastisement = Chastisement.objects.filter(schoolkid=choice_schoolkid)
     chastisement.delete()
-    print("У школьника", choice_schoolkid.full_name, "удалено", count_chastisement, "замечаний")
 
 
 def create_commendation(name, subject):
     choice_schoolkid = get_schoolkid(name)
     choice_subject = Subject.objects.filter(title__contains=subject).first()
-    last_lesson = Lesson.objects.filter(year_of_study=choice_schoolkid.year_of_study,group_letter=choice_schoolkid.group_letter,subject__title__contains=subject).order_by('-date', '-timeslot').first()
-    last_commendation = Commendation.objects.filter(subject=last_lesson.subject,created=last_lesson.date,schoolkid=choice_schoolkid,teacher=last_lesson.teacher).exists()
-    if last_commendation:
-        print(choice_schoolkid.full_name, "уже имеет похвалу по последнему уроку", choice_subject.title,"от преподавателя", last_lesson.teacher)
-    else:
-        new_commendation = Commendation.objects.create(text=random.choice(PRAISES),subject=last_lesson.subject,created=last_lesson.date,schoolkid=choice_schoolkid,teacher=last_lesson.teacher)
-        print("Для школьника,", choice_schoolkid.full_name, "создана похвала:", new_commendation.text,"по последнему уроку", choice_subject.title, new_commendation.created, "от преподавателя",last_lesson.teacher, )
-
+    last_lesson = Lesson.objects.filter(year_of_study=choice_schoolkid.year_of_study,
+                                        group_letter=choice_schoolkid.group_letter,
+                                        subject__title__contains=subject).order_by('-date', '-timeslot').first()
+    last_commendation = Commendation.objects.filter(subject=last_lesson.subject, created=last_lesson.date,
+                                                    schoolkid=choice_schoolkid, teacher=last_lesson.teacher).exists()
+    if not last_commendation:
+        new_commendation = Commendation.objects.create(text=random.choice(PRAISES), subject=last_lesson.subject,
+                                                       created=last_lesson.date, schoolkid=choice_schoolkid,
+                                                       teacher=last_lesson.teacher)
+        print("Для школьника,", choice_schoolkid.full_name, "создана похвала:", new_commendation.text,
+              "по последнему уроку", choice_subject.title, new_commendation.created, "от преподавателя",
+              last_lesson.teacher, )
