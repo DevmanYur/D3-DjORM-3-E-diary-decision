@@ -26,9 +26,9 @@ def get_schoolkid(schoolkid):
     try:
         return Schoolkid.objects.get(full_name__contains=schoolkid)
     except MultipleObjectsReturned:
-        print("Найдено более одного школьника c данными", schoolkid, ". Уточните ФИО школьника")
+        print("Найдено более одного школьника. Уточните ФИО школьника")
     except ObjectDoesNotExist:
-        print("Школьника c данными", schoolkid, " не существует")
+        print("Школьника не существует")
 
 
 def fix_marks(schoolkid):
